@@ -1513,125 +1513,131 @@ namespace Microsoft.ReportingServices.Rendering.ImageRenderer
 			}
 		}
 
-		private unsafe int Process32bppArgbImage(StringBuilder sb, StringBuilder imageContent, PDFImage image)
-		{
-			sb.Append(" /ColorSpace /DeviceRGB /BitsPerComponent 8 ");
-			if (!HumanReadablePDF)
-			{
-				sb.Append("/Filter /FlateDecode ");
-			}
-			MemoryStream memoryStream = new MemoryStream();
-			int i = 0;
-			bool flag = false;
-			using (Bitmap bitmap = new Bitmap(System.Drawing.Image.FromStream(new MemoryStream(image.ImageData))))
-			{
-				System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, image.GdiProperties.Width, image.GdiProperties.Height);
-				BitmapData bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-				IntPtr scan = bitmapData.Scan0;
-				byte* ptr = null;
-				uint num = (uint)Math.Abs(bitmapData.Stride);
-				ptr = (byte*)((num == 0) ? ((byte*)scan.ToPointer() + bitmapData.Stride * (image.GdiProperties.Height - 1)) : scan.ToPointer());
-				bool flag2 = false;
-				bool flag3 = false;
-				for (int j = 0; j < image.GdiProperties.Height; j++)
-				{
-					for (int k = 0; k < image.GdiProperties.Width; k++)
-					{
-						byte* ptr2 = ptr + j * num + k * 4;
-						Color color = Color.FromArgb(ptr2[3], ptr2[2], ptr2[1], *ptr2);
-						int num2;
-						if (color.A == 0)
-						{
-							num2 = i;
-							flag = true;
-						}
-						else
-						{
-							num2 = (color.ToArgb() & 0xFFFFFF);
-							if (num2 == i)
-							{
-								flag3 = true;
-							}
-						}
-						if (flag && flag3)
-						{
-							flag2 = true;
-							break;
-						}
-						memoryStream.WriteByte((byte)((num2 & 0xFF0000) >> 16));
-						memoryStream.WriteByte((byte)((num2 & 0xFF00) >> 8));
-						memoryStream.WriteByte((byte)(num2 & 0xFF));
-					}
-					if (flag2)
-					{
-						break;
-					}
-				}
-				if (flag2)
-				{
-					Dictionary<int, byte> dictionary = new Dictionary<int, byte>();
-					for (int l = 0; l < image.GdiProperties.Height; l++)
-					{
-						for (int m = 0; m < image.GdiProperties.Width; m++)
-						{
-							byte* ptr3 = ptr + l * num + m * 4;
-							int num2 = Color.FromArgb(ptr3[3], ptr3[2], ptr3[1], *ptr3).ToArgb() & 0xFFFFFF;
-							if (!dictionary.ContainsKey(num2))
-							{
-								dictionary.Add(num2, 0);
-							}
-						}
-					}
-					for (; dictionary.ContainsKey(i); i++)
-					{
-					}
-					memoryStream = new MemoryStream();
-					for (int n = 0; n < image.GdiProperties.Height; n++)
-					{
-						for (int num3 = 0; num3 < image.GdiProperties.Width; num3++)
-						{
-							byte* ptr4 = ptr + n * num + num3 * 4;
-							Color color = Color.FromArgb(ptr4[3], ptr4[2], ptr4[1], *ptr4);
-							int num2 = (color.A != 0) ? (color.ToArgb() & 0xFFFFFF) : i;
-							memoryStream.WriteByte((byte)((num2 & 0xFF0000) >> 16));
-							memoryStream.WriteByte((byte)((num2 & 0xFF00) >> 8));
-							memoryStream.WriteByte((byte)(num2 & 0xFF));
-						}
-					}
-				}
-				bitmap.UnlockBits(bitmapData);
-			}
-			if (flag)
-			{
-				int value = (i & 0xFF0000) >> 16;
-				int value2 = (i & 0xFF00) >> 8;
-				int value3 = i & 0xFF;
-				sb.Append("/Mask [");
-				sb.Append(value);
-				sb.Append(" ");
-				sb.Append(value);
-				sb.Append(" ");
-				sb.Append(value2);
-				sb.Append(" ");
-				sb.Append(value2);
-				sb.Append(" ");
-				sb.Append(value3);
-				sb.Append(" ");
-				sb.Append(value3);
-				sb.Append("]");
-			}
-			if (HumanReadablePDF)
-			{
-				Write(imageContent, memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
-			}
-			else
-			{
-				CompressBytes(imageContent, memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
-			}
-			return imageContent.Length;
-		}
+        private int Process32bppArgbImage(StringBuilder sb, StringBuilder imageContent, PDFImage image)
+        {
+            // Main image dictionary: RGB 8bpc
+            sb.Append(" /ColorSpace /DeviceRGB /BitsPerComponent 8 ");
+            if (!HumanReadablePDF)
+            {
+                sb.Append("/Filter /FlateDecode ");
+            }
 
-		private void ProcessImage(PDFImage image)
+            // Decode to a guaranteed 32bpp ARGB surface first (safer for all PNG variants).
+            using var sourceStream = new MemoryStream(image.ImageData, writable: false);
+            using var decoded = System.Drawing.Image.FromStream(sourceStream, useEmbeddedColorManagement: true, validateImageData: true);
+            using var bitmap32 = new Bitmap(decoded.Width, decoded.Height, PixelFormat.Format32bppArgb);
+
+            using (var g = System.Drawing.Graphics.FromImage(bitmap32))
+            {
+                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                g.DrawImage(decoded, 0, 0, decoded.Width, decoded.Height);
+            }
+
+            int width = bitmap32.Width;
+            int height = bitmap32.Height;
+
+            using var rgbStream = new MemoryStream(width * height * 3);
+            using var alphaStream = new MemoryStream(width * height);
+
+            bool hasAnyTransparency = false;
+
+            var rect = new System.Drawing.Rectangle(0, 0, width, height);
+            BitmapData bitmapData = bitmap32.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+            try
+            {
+                int stride = bitmapData.Stride;
+
+                unsafe
+                {
+                    byte* basePtr;
+                    if (stride < 0)
+                    {
+                        basePtr = (byte*)bitmapData.Scan0.ToPointer() + stride * (height - 1);
+                        stride = -stride;
+                    }
+                    else
+                    {
+                        basePtr = (byte*)bitmapData.Scan0.ToPointer();
+                    }
+
+                    for (int y = 0; y < height; y++)
+                    {
+                        byte* row = basePtr + y * stride;
+                        for (int x = 0; x < width; x++)
+                        {
+                            byte* px = row + x * 4; // BGRA
+
+                            byte b = px[0];
+                            byte g2 = px[1];
+                            byte r = px[2];
+                            byte a = px[3];
+
+                            rgbStream.WriteByte(r);
+                            rgbStream.WriteByte(g2);
+                            rgbStream.WriteByte(b);
+
+                            alphaStream.WriteByte(a);
+                            if (a < 255)
+                            {
+                                hasAnyTransparency = true;
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                bitmap32.UnlockBits(bitmapData);
+            }
+
+            // Emit SMask if needed
+            if (hasAnyTransparency)
+            {
+                var smaskContent = new StringBuilder();
+                if (HumanReadablePDF)
+                {
+                    Write(smaskContent, alphaStream.GetBuffer(), 0, (int)alphaStream.Length);
+                }
+                else
+                {
+                    CompressBytes(smaskContent, alphaStream.GetBuffer(), 0, (int)alphaStream.Length);
+                }
+
+                int smaskLength = smaskContent.Length;
+
+                var smaskObj = new StringBuilder();
+                smaskObj.Append("<< /Type /XObject /Subtype /Image ");
+                smaskObj.Append("/Width ").Append(width).Append(" ");
+                smaskObj.Append("/Height ").Append(height).Append(" ");
+                smaskObj.Append("/ColorSpace /DeviceGray /BitsPerComponent 8 ");
+                if (!HumanReadablePDF)
+                {
+                    smaskObj.Append("/Filter /FlateDecode ");
+                }
+                smaskObj.Append("/Length ").Append(smaskLength).Append(" >>\r\n");
+                smaskObj.Append("stream\r\n");
+                smaskObj.Append(smaskContent);
+                smaskObj.Append("\r\nendstream");
+
+                int smaskObjNum = WriteObject(smaskObj.ToString());
+                sb.Append("/SMask ").Append(smaskObjNum).Append(" 0 R ");
+            }
+
+            // Write main RGB stream
+            if (HumanReadablePDF)
+            {
+                Write(imageContent, rgbStream.GetBuffer(), 0, (int)rgbStream.Length);
+            }
+            else
+            {
+                CompressBytes(imageContent, rgbStream.GetBuffer(), 0, (int)rgbStream.Length);
+            }
+
+            return imageContent.Length;
+        }
+
+        private void ProcessImage(PDFImage image)
 		{
 			if (image.ImageData == null)
 			{
@@ -1657,11 +1663,11 @@ namespace Microsoft.ReportingServices.Rendering.ImageRenderer
 			}
 			else if (image.GdiProperties.RawFormat.Equals(ImageFormat.Png))
 			{
-				num = ProcessPngImage(stringBuilder, stringBuilder2, image);
-				if (num == -1)
-				{
+                //num = ProcessPngImage(stringBuilder, stringBuilder2, image);
+				//if (num == -1)
+				//{
 					num = Process32bppArgbImage(stringBuilder, stringBuilder2, image);
-				}
+				//}
 			}
 			else
 			{
