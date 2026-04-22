@@ -1,3 +1,19 @@
+# ReportViewer Core EX
+This is a fork of the [lkosson/reportviewercore](https://github.com/lkosson/reportviewercore) project that aims to add some fixes and new features to the original ReportViewer engine.
+
+This project is built for using in some of my personal projects and is not meant to be production-ready, or even tested.  
+
+Changes may happen without warning or a proper release schedule, might be untested and might affect things that only make sense for my particular use cases, so be warned.
+
+## Current changes compared to the base Project
+
+* Modified the handling of PNG images to properly support alpha blending (transparency) using `SMask`s - avoids jagged edges and black pixels when using transparent PNGs in your report.
+  * Note: this is only applied to actual images, the wellk known transparency issues still remain in dynamic images that are rendered by the engine itself (e.g.: charts).
+
+
+# Original readme
+What follows is the original readme from [lkosson/reportviewercore](https://github.com/lkosson/reportviewercore)
+
 # ReportViewer Core
 This project is a port of Microsoft Reporting Services (Report Viewer) to .NET 6+. It is feature-complete and ready for production use, but keep in mind it is not officially supported by Microsoft.
 
