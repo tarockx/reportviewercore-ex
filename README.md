@@ -5,10 +5,9 @@ This project is built for using in some of my personal projects and is not meant
 
 Changes may happen without warning or a proper release schedule, might be untested and might affect things that only make sense for my particular use cases, so be warned.
 
-## Current changes compared to the base Project
+## Current changes compared to the base project
 
 * Modified the handling of PNG images to properly support alpha blending (transparency) using `SMask`s - avoids jagged edges and black pixels when using transparent PNGs in your report.
-  * Note: this is only applied to actual images, the wellk known transparency issues still remain in dynamic images that are rendered by the engine itself (e.g.: charts).
 
 
 # Original readme
