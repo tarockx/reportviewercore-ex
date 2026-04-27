@@ -71,7 +71,7 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 		internal void NextPage(RPLWriter rplWriter, int totalPages)
 		{
 			WriteStartItemToStream(rplWriter);
-			double num = 0.0;
+			double totalHeight = 0.0;
 			ReportSection reportSection = m_sections[0];
 			_ = m_sections.Count;
 			double num2 = 0.0;
@@ -87,10 +87,10 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 				{
 					nextSection = m_sections[i + 1];
 				}
-				double num3 = reportSection2.NextPage(rplWriter, m_pageContext.PageNumber, totalPages, num, roundedDouble.Value - num, nextSection, isFirstSectionOnPage);
-				if (num3 > 0.0)
+				double writtenPageHeight = reportSection2.NextPage(rplWriter, m_pageContext.PageNumber, totalPages, totalHeight, roundedDouble.Value - totalHeight, nextSection, isFirstSectionOnPage);
+				if (writtenPageHeight > 0.0)
 				{
-					num += num3;
+					totalHeight += writtenPageHeight;
 					list2.Add(reportSection2);
 				}
 				num2 = Math.Max(num2, reportSection2.LeftEdge);
@@ -98,7 +98,7 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 				{
 					list.Add(reportSection2);
 				}
-				if (roundedDouble == num)
+				if (roundedDouble == totalHeight)
 				{
 					break;
 				}
@@ -113,6 +113,7 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 			}
 			if (rplWriter != null)
 			{
+				//TODO: header written here sometimes?
 				reportSection.WriteDelayedSectionHeader(rplWriter, Done);
 				WriteEndItemToStream(rplWriter, list2);
 			}

@@ -793,12 +793,25 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 			return result;
 		}
 
-		internal void CalculateVertical(PageContext pageContext, double topInParentSystem, double bottomInParentSystem, PageItem[] siblings, List<PageItem> ancestors, ref bool anyAncestorHasKT, bool hasUnpinnedAncestors)
+		internal void CalculateVertical(PageContext pageContext,
+                                  double topInParentSystem,
+                                  double bottomInParentSystem,
+                                  PageItem[] siblings,
+                                  List<PageItem> ancestors,
+                                  ref bool anyAncestorHasKT,
+                                  bool hasUnpinnedAncestors)
 		{
 			CalculateVertical(pageContext, topInParentSystem, bottomInParentSystem, siblings, ancestors, ref anyAncestorHasKT, hasUnpinnedAncestors, null);
 		}
 
-		internal void CalculateVertical(PageContext pageContext, double topInParentSystem, double bottomInParentSystem, PageItem[] siblings, List<PageItem> ancestors, ref bool anyAncestorHasKT, bool hasUnpinnedAncestors, double? sourceWidth)
+		internal void CalculateVertical(PageContext pageContext,
+                                  double topInParentSystem,
+                                  double bottomInParentSystem,
+                                  PageItem[] siblings,
+                                  List<PageItem> ancestors,
+                                  ref bool anyAncestorHasKT,
+                                  bool hasUnpinnedAncestors,
+                                  double? sourceWidth)
 		{
 			AdjustOriginFromItemsAbove(siblings);
 			OnThisVerticalPage = false;
@@ -1129,6 +1142,24 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 				return true;
 			}
 			return false;
+		}
+
+		internal string DD(PageContext pageContext, double topInParentSystem, double bottomInParentSystem)
+		{
+			if(this is ReportBody reportBody)
+			{
+				foreach (var child in reportBody.Children(pageContext))
+				{
+					if (child != null && child.HitsCurrentVerticalPage(topInParentSystem, bottomInParentSystem))
+					{
+						if(child is Rectangle rectangle)
+						{
+							return rectangle.PageName;
+						}
+					}
+				}
+			}
+			return null;
 		}
 
 		internal bool HitsCurrentVerticalPage(double topInParentSystem, double bottomInParentSystem)
