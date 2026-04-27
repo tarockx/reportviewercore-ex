@@ -14,6 +14,13 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 	{
 		protected PageItem[] m_children;
 
+		internal PageItem[] Children(PageContext pageContext) {
+			if(m_children == null){
+				CreateChildren(pageContext);
+			}
+			return m_children;
+		}
+
 		protected int[] m_indexesLeftToRight;
 
 		protected double m_rightPadding;
@@ -263,7 +270,16 @@ namespace Microsoft.ReportingServices.Rendering.HPBProcessing
 			}
 		}
 
-		protected override void DetermineVerticalSize(PageContext pageContext, double topInParentSystem, double bottomInParentSystem, List<PageItem> ancestors, ref bool anyAncestorHasKT, bool hasUnpinnedAncestors)
+        internal void DetermineVerticalSizePublic(PageContext pageContext, double topInParentSystem, double bottomInParentSystem)
+		{
+			bool anyAncestorHasKT = false;
+			bool hasUnpinnedAncestors = false;
+
+            DetermineVerticalSize(pageContext, topInParentSystem, bottomInParentSystem, new(), ref anyAncestorHasKT, hasUnpinnedAncestors);
+        }
+
+
+        protected override void DetermineVerticalSize(PageContext pageContext, double topInParentSystem, double bottomInParentSystem, List<PageItem> ancestors, ref bool anyAncestorHasKT, bool hasUnpinnedAncestors)
 		{
 			if (m_children == null)
 			{
