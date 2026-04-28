@@ -6,12 +6,12 @@
     <RootNamespace>Microsoft.ReportViewer.NETCore</RootNamespace>
     <PackageId>ReportViewerCoreEx.NETCore</PackageId>
     <Version>15.1.33</Version>
-    <Authors>Microsoft, lkosson</Authors>
+    <Authors>Microsoft, lkosson, tarockx</Authors>
     <Company>Microsoft</Company>
     <Product>ReportViewer Core</Product>
     <Description>SQL Server Reporting Services engine decompiled and recompiled for .NET 8. Based on ReportViewer 15.0.1404.0 - Ex edition</Description>
     <PackageProjectUrl>https://github.com/tarockx/reportviewercore-ex</PackageProjectUrl>
-    <SignAssembly>False</SignAssembly>
+    <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ReportViewerCore.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
