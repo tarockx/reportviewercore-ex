@@ -4,14 +4,14 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <AssemblyName>Microsoft.ReportViewer.NETCore</AssemblyName>
     <RootNamespace>Microsoft.ReportViewer.NETCore</RootNamespace>
-    <PackageId>ReportViewerCore.NETCore</PackageId>
+    <PackageId>ReportViewerCoreEx.NETCore</PackageId>
     <Version>15.1.33</Version>
     <Authors>Microsoft, lkosson</Authors>
     <Company>Microsoft</Company>
     <Product>ReportViewer Core</Product>
-    <Description>SQL Server Reporting Services engine decompiled and recompiled for .NET 8. Based on ReportViewer 15.0.1404.0</Description>
-    <PackageProjectUrl>https://github.com/lkosson/reportviewercore</PackageProjectUrl>
-    <SignAssembly>True</SignAssembly>
+    <Description>SQL Server Reporting Services engine decompiled and recompiled for .NET 8. Based on ReportViewer 15.0.1404.0 - Ex edition</Description>
+    <PackageProjectUrl>https://github.com/tarockx/reportviewercore-ex</PackageProjectUrl>
+    <SignAssembly>False</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ReportViewerCore.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
