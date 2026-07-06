@@ -7,7 +7,8 @@ Changes may happen without warning or a proper release schedule, might be untest
 
 ## Current changes compared to the base project
 
-* Modified the handling of PNG images to properly support alpha blending (transparency) using `SMask`s - avoids jagged edges and black pixels when using transparent PNGs in your report.
+* v15.1.34 - Modified the handling of PNG images to properly support alpha blending (transparency) using `SMask`s - avoids jagged edges and black pixels when using transparent PNGs in your report.
+* v15.1.35 - Fixed a font glyph caching issue in the PDF renderer that could cause the space glyph to have zero-width if it first appeared in a all whitespace run
 
 
 # Original readme
