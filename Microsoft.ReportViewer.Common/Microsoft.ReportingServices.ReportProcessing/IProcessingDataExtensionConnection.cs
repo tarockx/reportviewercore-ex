@@ -14,6 +14,8 @@ namespace Microsoft.ReportingServices.ReportProcessing
 
 		void DataSetRetrieveForReportInstance(ICatalogItemContext itemContext, ParameterInfoCollection reportParameters);
 
+		void EnsureCorrectDataSources(bool inSubreport);
+
 		IDbConnection OpenDataSourceExtensionConnection(IProcessingDataSource dataSource, string connectionString, DataSourceInfo dataSourceInfo, string datasetName);
 
 		void HandleImpersonation(IProcessingDataSource dataSource, DataSourceInfo dataSourceInfo, string datasetName, IDbConnection connection, System.Action afterImpersonationAction);

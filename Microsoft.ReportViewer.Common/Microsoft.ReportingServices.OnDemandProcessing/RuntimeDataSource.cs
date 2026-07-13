@@ -362,7 +362,13 @@ namespace Microsoft.ReportingServices.OnDemandProcessing
 				metrics.StartTimer(DataProcessingMetrics.MetricType.OpenConnection);
 				DataSourceInfo dataSourceInfo = null;
 				string text = null;
-				if (pc.CreateAndSetupDataExtensionFunction.MustResolveSharedDataSources)
+				IProcessingDataExtensionConnection createAndSetupDataExtensionFunction = pc.CreateAndSetupDataExtensionFunction;
+				// The data extension connection is shared across the whole render (root + every
+				// subreport instance); re-assert which scope's data sources apply right before
+				// opening the connection for THIS dataset, since a nested subreport may have run
+				// (and swapped this shared state) since the last time this scope was entered.
+				createAndSetupDataExtensionFunction.EnsureCorrectDataSources(pc.InSubreport);
+				if (createAndSetupDataExtensionFunction.MustResolveSharedDataSources)
 				{
 					text = dataSourceObj.ResolveConnectionString(pc, out dataSourceInfo);
 					if (pc.UseVerboseExecutionLogging)
@@ -370,7 +376,7 @@ namespace Microsoft.ReportingServices.OnDemandProcessing
 						metrics.ResolvedConnectionString = text;
 					}
 				}
-				return pc.CreateAndSetupDataExtensionFunction.OpenDataSourceExtensionConnection(dataSourceObj, text, dataSourceInfo, dataSetObj.Name);
+				return createAndSetupDataExtensionFunction.OpenDataSourceExtensionConnection(dataSourceObj, text, dataSourceInfo, dataSetObj.Name);
 			}
 			catch (RSException)
 			{
