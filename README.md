@@ -9,6 +9,7 @@ Changes may happen without warning or a proper release schedule, might be untest
 
 * v15.1.34 - Modified the handling of PNG images to properly support alpha blending (transparency) using `SMask`s - avoids jagged edges and black pixels when using transparent PNGs in your report.
 * v15.1.35 - Fixed a font glyph caching issue in the PDF renderer that could cause the space glyph to have zero-width if it first appeared in a all whitespace run
+* v15.1.36 - Fixed an issue that caused the report to fail to render in some cases where a master report uses a dataset that was not used by at least one of the subreports 
 
 
 # Original readme
